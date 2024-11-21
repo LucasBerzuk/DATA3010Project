@@ -86,21 +86,19 @@ features = labels_and_features.drop(columns=["address", "class", "Time step", "n
 
 # features.iloc[:100].to_csv("../small.csv", index=False)
 
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=RANDOM_STATE)
 
+# Automatically compute class weights
+class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(labels), y=y_train)
+class_weight_dict = dict(zip(np.unique(labels), class_weights))
 
-# X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=RANDOM_STATE)
+# Train Random Forest with class weights
+clf = RandomForestClassifier(class_weight=class_weight_dict, random_state=RANDOM_STATE)
+clf.fit(X_train, y_train)
 
-# # Automatically compute class weights
-# class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(labels), y=y_train)
-# class_weight_dict = dict(zip(np.unique(labels), class_weights))
-
-# # Train Random Forest with class weights
-# clf = RandomForestClassifier(class_weight=class_weight_dict, random_state=RANDOM_STATE)
-# clf.fit(X_train, y_train)
-
-# # Predictions and evaluation
-# y_pred = clf.predict(X_test)
-# print(classification_report(y_test, y_pred))
+# Predictions and evaluation
+y_pred = clf.predict(X_test)
+print(classification_report(y_test, y_pred))
 
 
 
