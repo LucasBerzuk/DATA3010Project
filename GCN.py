@@ -52,22 +52,7 @@ print("Wallet Labels: " + str(Wallet_labels.shape))
 
 print(Wallet_labels)
 
-w_labelled = Wallet_labels.loc[Wallet_labels["class"] != 3]
-w_unlabelled = Wallet_labels.loc[Wallet_labels["class"] == 3]
 
-
-
-print("Labelled: " + str(w_labelled.shape))
-print("Unlabelled: " + str(w_unlabelled.shape))
-
-dist = w_labelled["class"].value_counts()
-print(dist)
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-from sklearn.utils.class_weight import compute_class_weight
-import numpy as np
 
 RANDOM_STATE = 3010
 
@@ -81,26 +66,43 @@ features = Wallet_features.drop_duplicates(subset="address", keep="last")
 labels_and_features = pd.merge(Wallet_labels, features, how="inner", on="address")
 
 
-labels = labels_and_features["class"]
-features = labels_and_features.drop(columns=["address", "class", "Time step", "num_timesteps_appeared_in"])
+import torch
+from torch_geometric.data import Data
+# from torch_geometric.nn import GCNConv
+# from torch_geometric.loader import DataLoader
 
-# features.iloc[:100].to_csv("../small.csv", index=False)
+labels_and_features["node_id"] = range(1, len(labels_and_features) + 1)
+print(labels_and_features)
 
+address_to_id = labels_and_features.set_index('address')['node_id'].to_dict()
 
+# 1 = illicit
+# 0 = licit
+# -1 = unknown
+labels_and_features["class"] = labels_and_features["class"].map({2:0, 3:-1})
 
-# X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=RANDOM_STATE)
+node_and_features = labels_and_features.iloc[:1000]
 
-# # Automatically compute class weights
-# class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(labels), y=y_train)
-# class_weight_dict = dict(zip(np.unique(labels), class_weights))
-
-# # Train Random Forest with class weights
-# clf = RandomForestClassifier(class_weight=class_weight_dict, random_state=RANDOM_STATE)
-# clf.fit(X_train, y_train)
-
-# # Predictions and evaluation
-# y_pred = clf.predict(X_test)
-# print(classification_report(y_test, y_pred))
-
+# node_features = torch.tensor(labels_and_features[['feature_1', 'feature_2', 'feature_3']].values, dtype=torch.float)
+# node_labels = torch.tensor(labels_and_features['label'].values, dtype=torch.long)
 
 
+
+# Addr_Addr["input_address"] = Addr_Addr["input_address"].map(address_to_id)
+# Addr_Addr["output_address"] = Addr_Addr["output_address"].map(address_to_id)
+# print(Addr_Addr)
+
+# print(len(Addr_Addr.loc[Addr_Addr["input_address"].isna()]))
+
+# edges = Addr_Addr.loc[:10000]
+
+# transpose_edges = edges[["input_address", "output_address"]].values.T
+
+# edge_index = torch.tensor(transpose_edges, dtype = torch.long)
+
+
+
+
+# # Step 3: Create the PyTorch Geometric Data Object
+# data = Data(x=node_features, edge_index=edge_index, y=node_labels)
+# print(data)
